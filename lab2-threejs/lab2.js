@@ -155,7 +155,7 @@ function init() {
   container = document.getElementById('container')
 
   camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100)
-  camera.position.z = 40
+  camera.position.z = 10
 
   var texloader = new THREE.TextureLoader()
 
