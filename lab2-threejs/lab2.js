@@ -262,6 +262,8 @@ function init() {
   shaderMaterial.uniforms.specularMap.value = specularMap
 
   earthMesh = new THREE.Mesh(geometryEarth, shaderMaterial)
+  earthMesh.castShadow = true
+  earthMesh.receiveShadow = true
   moonMesh = new THREE.Mesh(geometryMoon, materialMoon)
   sunMesh = new THREE.Mesh(geometrySun, materialSun)
   marsMesh = new THREE.Mesh(geometryMars, materialMars)
