@@ -2,8 +2,8 @@ var container
 var camera, scene, renderer
 var mouseX = 0,
   mouseY = 0
-var windowHalfX = window.innerWidth
-var windowHalfY = window.innerHeight
+var windowHalfX = window.innerWidth /2
+var windowHalfY = window.innerHeight /2
 
 // Object3D ("Group") nodes and Mesh nodes:
 var sceneRoot = new THREE.Group()
@@ -155,7 +155,7 @@ function init() {
   container = document.getElementById('container')
 
   camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100)
-  camera.position.z = 5
+  camera.position.z = 40
 
   var texloader = new THREE.TextureLoader()
 
