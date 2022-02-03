@@ -2,8 +2,8 @@ var container
 var camera, scene, renderer
 var mouseX = 0,
   mouseY = 0
-var windowHalfX = window.innerWidth /2
-var windowHalfY = window.innerHeight /2
+var windowHalfX = window.innerWidth / 2
+var windowHalfY = window.innerHeight / 2
 
 // Object3D ("Group") nodes and Mesh nodes:
 var sceneRoot = new THREE.Group()
@@ -75,6 +75,33 @@ function onDocumentMouseMove(event) {
   // mouseX, mouseY are in the range [-1, 1]
   mouseX = (event.clientX - windowHalfX) / windowHalfX
   mouseY = (event.clientY - windowHalfY) / windowHalfY
+}
+
+function getRandomStarField(numberOfStars, width, height) {
+  var canvas = document.createElement('CANVAS')
+
+  canvas.width = width
+  canvas.height = height
+
+  var ctx = canvas.getContext('2d')
+
+  ctx.fillStyle = 'black'
+  ctx.fillRect(0, 0, width, height)
+
+  for (var i = 0; i < numberOfStars; ++i) {
+    var radius = Math.random() * 2
+    var x = Math.floor(Math.random() * width)
+    var y = Math.floor(Math.random() * height)
+
+    ctx.beginPath()
+    ctx.arc(x, y, radius, 0, 2 * Math.PI, false)
+    ctx.fillStyle = 'white'
+    ctx.fill()
+  }
+
+  var texture = new THREE.Texture(canvas)
+  texture.needsUpdate = true
+  return texture
 }
 
 function createSceneGraph() {
@@ -154,74 +181,81 @@ function createSceneGraph() {
 function init() {
   container = document.getElementById('container')
 
-  camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100)
-  camera.position.z = 10
+  camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 150)
+  camera.position.z = 50
 
   var texloader = new THREE.TextureLoader()
 
   // Earth mesh
-  var geometryEarth = new THREE.SphereGeometry(0.09, 20, 20)
-
+  var geometryEarth = new THREE.SphereGeometry(0.5, 32, 32)
   var materialEarth = new THREE.MeshPhongMaterial()
   materialEarth.combine = 0
   materialEarth.needsUpdate = true
   materialEarth.wireframe = false
 
   //Mars mesh
-  var geometryMars = new THREE.SphereGeometry(0.07, 20, 20)
-
+  var geometryMars = new THREE.SphereGeometry(0.25, 32, 32)
   var materialMars = new THREE.MeshPhongMaterial()
   materialMars.combine = 0
   materialMars.needsUpdate = true
   materialMars.wireframe = false
 
   //Jupiter mesh
-  var geometryJupiter = new THREE.SphereGeometry(0.5, 26, 26)
-
+  var geometryJupiter = new THREE.SphereGeometry(5.5, 32, 32)
   var materialJupiter = new THREE.MeshPhongMaterial()
   materialJupiter.combine = 0
   materialJupiter.needsUpdate = true
   materialJupiter.wireframe = false
 
   //Saturn mesh
-  var geometrySat = new THREE.SphereGeometry(0.2, 20, 20)
-
+  var geometrySat = new THREE.SphereGeometry(4.5, 32, 32)
   var materialSat = new THREE.MeshPhongMaterial()
   materialSat.combine = 0
   materialSat.needsUpdate = true
   materialSat.wireframe = false
 
   // Saturn ring
-  var geometryRing = new THREE.RingGeometry(0.3, 0.25, 15, 100)
-
-  var materialRing = new THREE.MeshPhongMaterial()
+  var geometryRing = new THREE.RingGeometry(6, 8, 32)
+  var materialRing = new THREE.MeshBasicMaterial({ color: 0x9c9679, side: THREE.DoubleSide })
   materialRing.combine = 0
   materialRing.needsUpdate = true
   materialRing.wireframe = false
+  materialRing.transparent = true
+  materialRing.opacity = 0.5
 
   //Neptune mesh
-  var geometryNep = new THREE.SphereGeometry(0.15, 20, 20)
-
+  var geometryNep = new THREE.SphereGeometry(1.8, 32, 32)
   var materialNep = new THREE.MeshPhongMaterial()
   materialNep.combine = 0
   materialNep.needsUpdate = true
   materialNep.wireframe = false
 
   // Moon mesh
-  var geometryMoon = new THREE.SphereGeometry(0.02, 10, 10)
-
+  var geometryMoon = new THREE.SphereGeometry(0.125, 10, 10)
   var materialMoon = new THREE.MeshPhongMaterial(0.00229)
   materialMoon.combine = 0
   materialMoon.needsUpdate = true
   materialMoon.wireframe = false
 
   //Sun mesh
-  var geometrySun = new THREE.SphereGeometry(1.0, 32, 32)
-
+  var geometrySun = new THREE.SphereGeometry(3, 32, 32)
   var materialSun = new THREE.MeshBasicMaterial()
   materialSun.combine = 0
   materialSun.needsUpdate = true
   materialSun.wireframe = false
+
+  //starfield
+  let skyBox = new THREE.BoxGeometry(120, 120, 120)
+  let skyBoxMaterial = new THREE.MeshBasicMaterial({
+    map: getRandomStarField(600, 2048, 2048),
+    side: THREE.BackSide,
+  })
+  let sky = new THREE.Mesh(skyBox, skyBoxMaterial)
+  sceneRoot.add(sky)
+
+  //background
+  const spaceBack = texloader.load('tex/space.jpg')
+  sceneRoot.background = spaceBack
 
   //Textures
 
@@ -239,8 +273,8 @@ function init() {
   materialSat.map = satTexture
   const nepTexture = texloader.load('tex/2k_neptune.jpg')
   materialNep.map = nepTexture
-  const ringTexture = texloader.load('tex/2k_jupiter.jpg')
-  materialRing.map = ringTexture
+  // const ringTexture = texloader.load('tex/2k_jupiter.jpg')
+  // materialRing.map = ringTexture
 
   var uniforms = THREE.UniformsUtils.merge([
     {
@@ -261,22 +295,30 @@ function init() {
   const specularMap = texloader.load('tex/2k_earth_specular_map.jpg')
   shaderMaterial.uniforms.specularMap.value = specularMap
 
+  //Meshes
   earthMesh = new THREE.Mesh(geometryEarth, shaderMaterial)
   earthMesh.castShadow = true
   earthMesh.receiveShadow = true
+
   moonMesh = new THREE.Mesh(geometryMoon, materialMoon)
+
   sunMesh = new THREE.Mesh(geometrySun, materialSun)
+
   marsMesh = new THREE.Mesh(geometryMars, materialMars)
   marsMesh.castShadow = true
   marsMesh.receiveShadow = true
+
   jupiterMesh = new THREE.Mesh(geometryJupiter, materialJupiter)
   jupiterMesh.castShadow = true //default is false
   jupiterMesh.receiveShadow = true //default
+
   satMesh = new THREE.Mesh(geometrySat, materialSat)
   satMesh.receiveShadow = true
   satMesh.castShadow = true
+
   nepMesh = new THREE.Mesh(geometryNep, materialNep)
   nepMesh.receiveShadow = true
+
   ringMesh = new THREE.Mesh(geometryRing, materialRing)
 
   createSceneGraph()
@@ -310,8 +352,8 @@ function tilt(degree) {
 
 function render() {
   // Set up the camera
-  camera.position.x = mouseX * 10
-  camera.position.y = -mouseY * 10
+  camera.position.x = mouseX * 50
+  camera.position.y = -mouseY * 50
   camera.lookAt(scene.position)
 
   let speed = 1
@@ -323,25 +365,25 @@ function render() {
     earthSpin.rotation.y += 0.1
     earthTilt.rotation.z = tilt(23.44)
     earthRotSun.rotation.y += rotSpeed(365, speed)
-    earthTrans.position.x = 2
+    earthTrans.position.x = 10
 
     //mars
     marsSpin.rotation.y += 0.1
     marsTilt.rotation.z = tilt(25)
     marsRotSun.rotation.y += rotSpeed(365 * 2, speed)
-    marsTrans.position.x = 3
+    marsTrans.position.x = 12
 
     //jupiter
     jupiterSpin.rotation.y += rotSpeed(0.55, speed)
     jupiterTilt.rotation.z = tilt(3)
     jupiterRotSun.rotation.y += rotSpeed(4380, speed)
-    jupiterTrans.position.x = 4
+    jupiterTrans.position.x = 22
 
     //saturn
     satSpin.rotation.y += rotSpeed(0.55, speed)
     satTilt.rotation.z = tilt(26.73)
     satRotSun.rotation.y += rotSpeed(10585, speed)
-    satTrans.position.x = 5
+    satTrans.position.x = 45
 
     //ring
     ringRotSat.rotation.y += rotSpeed(5, speed)
@@ -354,11 +396,11 @@ function render() {
     nepSpin.rotation.y += rotSpeed(0.8, speed)
     nepTilt.rotation.z = tilt(28)
     nepRotSun.rotation.y += rotSpeed(60225, speed)
-    nepTrans.position.x = 6
+    nepTrans.position.x = 55
 
     // moon
     moonRotEarth.rotation.y += 0.1 // moon rot
-    moonTrans.position.x = 0.3
+    moonTrans.position.x = -1
     moonSpin.rotation.y += 0.0038
     moonTilt.rotation.z = 0.09
 
